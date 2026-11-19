@@ -92,14 +92,27 @@ const fmtNum = (n) => (Math.round(Number(n) * 1000) / 1000).toString();
 const status = (c) => (c.stock < c.low ? 'LOW' : 'GOOD');
 
 /* ---------- server calls ---------- */
-function call(fn, args, okMsg) {
-  $('#main').classList.add('loading');
-  return new Promise((resolve) => {
-    let r = google.script.run
-      .withSuccessHandler((d) => { state = d; $('#main').classList.remove('loading'); render(); if (okMsg) toast(okMsg); resolve(true); })
-      .withFailureHandler((e) => { $('#main').classList.remove('loading'); render(); showError(e.message || e); resolve(false); });
-    r[fn].apply(r, args);
-  });
+// Hardcoded: paste your Apps Script Web app URL (ends with /exec)
+const API_URL = 'PASTE_YOUR_WEB_APP_URL_HERE';
+
+async function call(fn, args, okMsg) {
+  const main = $('#main');
+  main.classList.add('loading');
+  try {
+    if (API_URL.indexOf('PASTE_') === 0) throw new Error('Set API_URL in Index.html to your Apps Script Web app URL.');
+    // text/plain keeps this a "simple" request (no CORS preflight), which Apps Script requires.
+    const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: fn, args: args }) });
+    const out = await res.json();
+    if (!out.ok) throw new Error(out.error);
+    state = out.data;
+    main.classList.remove('loading'); render();
+    if (okMsg) toast(okMsg);
+    return true;
+  } catch (e) {
+    main.classList.remove('loading'); render();
+    showError(e.message || e);
+    return false;
+  }
 }
 function showError(msg) {
   const clean = String(msg).replace(/^Error:\s*/, '');
