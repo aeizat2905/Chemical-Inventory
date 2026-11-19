@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --green:#15803d; --green-bg:#dcfce7; --red:#b91c1c; --red-bg:#fee2e2;
+    --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb; --bg:#f6f7f9; --card:#fff; --brand:#1d4ed8;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  header{background:#fff;border-bottom:1px solid var(--line);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  h1{font-size:18px;margin:0}
+  nav{display:flex;gap:4px}
+  nav button{border:0;background:none;padding:8px 14px;border-radius:8px;font-size:14px;cursor:pointer;color:var(--muted)}
+  nav button.active{background:#eff6ff;color:var(--brand);font-weight:600}
+  main{max-width:960px;margin:0 auto;padding:20px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .stat .n{font-size:32px;font-weight:700;line-height:1.1}
+  .stat .l{font-size:13px;color:var(--muted);margin-top:4px}
+  .stat.low .n{color:var(--red)} .stat.good .n{color:var(--green)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+  .card h2{font-size:15px;margin:0 0 12px}
+  .bar{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--line)}
+  .bar i{display:block;height:100%}
+  .row{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line);flex-wrap:wrap}
+  .row:first-child{border-top:0}
+  .grow{flex:1;min-width:150px}
+  .name{font-weight:600}
+  .sub{font-size:12px;color:var(--muted);margin-top:2px}
+  .badge{font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;white-space:nowrap}
+  .badge.GOOD{background:var(--green-bg);color:var(--green)}
+  .badge.LOW{background:var(--red-bg);color:var(--red)}
+  .qty{font-size:22px;font-weight:700;min-width:70px;text-align:right}
+  .qty.LOW{color:var(--red)} .qty.GOOD{color:var(--green)}
+  .meter{height:6px;border-radius:3px;background:var(--line);margin-top:6px;overflow:hidden;max-width:220px}
+  .meter i{display:block;height:100%}
+  .meter i.GOOD{background:#22c55e} .meter i.LOW{background:#ef4444}
+  button.b{border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer}
+  button.b:hover{background:#f3f4f6}
+  button.use{background:#fff1f2;border-color:#fecdd3;color:var(--red);font-weight:600}
+  button.recv{background:#f0fdf4;border-color:#bbf7d0;color:var(--green);font-weight:600}
+  button.primary{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
+  button.primary:hover{background:#1e40af}
+  button.danger{color:var(--red)}
+  .actions{display:flex;gap:6px;flex-wrap:wrap}
+  .toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px;flex-wrap:wrap}
+  .toolbar input{padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;min-width:200px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:600}
+  .pos{color:var(--green);font-weight:600} .neg{color:var(--red);font-weight:600}
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;padding:16px;z-index:10}
+  .modal{background:#fff;border-radius:14px;padding:20px;width:100%;max-width:400px}
+  .modal h3{margin:0 0 14px;font-size:17px}
+  label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+  .modal input{width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:15px}
+  .modal .foot{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+  .hint{font-size:13px;margin-top:10px;padding:8px 10px;border-radius:8px;background:#f3f4f6}
+  .hint.LOW{background:var(--red-bg);color:var(--red)} .hint.GOOD{background:var(--green-bg);color:var(--green)}
+  .err{background:var(--red-bg);color:var(--red);padding:10px 14px;border-radius:8px;margin-bottom:12px;font-size:14px}
+  .empty{color:var(--muted);text-align:center;padding:24px 0;font-size:14px}
+  .loading{opacity:.5;pointer-events:none}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 18px;border-radius:999px;font-size:14px;z-index:20}
+</style>
+</head>
+<body>
+<header>
+  <h1>🧪 Chemical Inventory</h1>
+  <nav>
+    <button data-tab="dash" class="active">Dashboard</button>
+    <button data-tab="inv">Inventory</button>
+    <button data-tab="log">History</button>
+  </nav>
+</header>
+<main id="main" class="loading"></main>
+<div id="modalRoot"></div>
+
+<script>
+let state = { chemicals: [], log: [] };
+let tab = 'dash';
+let search = '';
+
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtNum = (n) => (Math.round(Number(n) * 1000) / 1000).toString();
+
+// LOW STOCK RULE: change this one line if you want "at or below" instead of "below".
+const status = (c) => (c.stock < c.low ? 'LOW' : 'GOOD');
+
+/* ---------- server calls ---------- */
+function call(fn, args, okMsg) {
+  $('#main').classList.add('loading');
+  return new Promise((resolve) => {
+    let r = google.script.run
+      .withSuccessHandler((d) => { state = d; $('#main').classList.remove('loading'); render(); if (okMsg) toast(okMsg); resolve(true); })
+      .withFailureHandler((e) => { $('#main').classList.remove('loading'); render(); showError(e.message || e); resolve(false); });
+    r[fn].apply(r, args);
+  });
+}
+function showError(msg) {
+  const clean = String(msg).replace(/^Error:\s*/, '');
+  $('#main').insertAdjacentHTML('afterbegin', '<div class="err">' + esc(clean) + '</div>');
+}
+function toast(t) {
+  const el = document.createElement('div'); el.className = 'toast'; el.textContent = t;
+  document.body.appendChild(el); setTimeout(() => el.remove(), 2200);
+}
+
+/* ---------- rendering ---------- */
+function render() {
+  document.querySelectorAll('nav button').forEach((b) => b.classList.toggle('active', b.dataset.tab === tab));
+  const m = $('#main');
+  m.innerHTML = tab === 'dash' ? dashHtml() : tab === 'inv' ? invHtml() : logHtml();
+  const s = $('#search'); if (s) { s.addEventListener('input', (e) => { search = e.target.value; const pos = e.target.selectionStart; render(); const n = $('#search'); n.focus(); n.setSelectionRange(pos, pos); }); }
+}
+
+function dashHtml() {
+  const list = state.chemicals;
+  const low = list.filter((c) => status(c) === 'LOW');
+  const good = list.length - low.length;
+  const pctGood = list.length ? (good / list.length) * 100 : 0;
+  let h = '<div class="grid">' +
+    '<div class="stat"><div class="n">' + list.length + '</div><div class="l">Chemicals tracked</div></div>' +
+    '<div class="stat good"><div class="n">' + good + '</div><div class="l">Good stock</div></div>' +
+    '<div class="stat low"><div class="n">' + low.length + '</div><div class="l">Low stock</div></div></div>';
+
+  h += '<div class="card"><h2>Stock health</h2>' +
+    (list.length
+      ? '<div class="bar"><i style="width:' + pctGood + '%;background:#22c55e"></i><i style="width:' + (100 - pctGood) + '%;background:#ef4444"></i></div>' +
+        '<div class="sub" style="margin-top:8px">' + good + ' good · ' + low.length + ' low</div>'
+      : '<div class="empty">No chemicals yet.</div>') + '</div>';
+
+  h += '<div class="card"><h2>' + (low.length ? '⚠️ Low stock – please reorder' : 'Low stock') + '</h2>';
+  h += low.length ? low.sort((a, b) => a.stock / (a.low || 1) - b.stock / (b.low || 1)).map(chemRow).join('')
+                  : '<div class="empty">✅ All chemicals are at a good level.</div>';
+  h += '</div>';
+
+  h += '<div class="card"><h2>All chemicals</h2>' + (list.length ? list.map(chemRow).join('') : '<div class="empty">No chemicals yet.</div>') + '</div>';
+  return h;
+}
+
+function chemRow(c) {
+  const st = status(c);
+  const pct = Math.min(100, c.low > 0 ? (c.stock / (c.low * 2)) * 100 : 100);
+  return '<div class="row">' +
+    '<div class="grow"><div class="name">' + esc(c.name) + '</div>' +
+    '<div class="sub">Low below ' + fmtNum(c.low) + ' ' + esc(c.unit) + ' · updated ' + esc(c.updated) + '</div>' +
+    '<div class="meter"><i class="' + st + '" style="width:' + pct + '%"></i></div></div>' +
+    '<div class="qty ' + st + '">' + fmtNum(c.stock) + '<span class="sub"> ' + esc(c.unit) + '</span></div>' +
+    '<span class="badge ' + st + '">' + (st === 'LOW' ? 'LOW' : 'GOOD') + '</span>' +
+    '<div class="actions"><button class="b use" onclick="openAdjust(\'' + c.id + '\',-1)">− Use</button>' +
+    '<button class="b recv" onclick="openAdjust(\'' + c.id + '\',1)">+ Receive</button></div></div>';
+}
+
+function invHtml() {
+  const q = search.trim().toLowerCase();
+  const list = state.chemicals.filter((c) => !q || c.name.toLowerCase().includes(q));
+  let h = '<div class="toolbar"><input id="search" placeholder="Search chemical…" value="' + esc(search) + '">' +
+    '<button class="b primary" onclick="openEdit()">+ Add chemical</button></div><div class="card">';
+  h += list.length ? list.map((c) => {
+    const st = status(c);
+    return '<div class="row"><div class="grow"><div class="name">' + esc(c.name) + '</div>' +
+      '<div class="sub">Stock ' + fmtNum(c.stock) + ' ' + esc(c.unit) + ' · Low below ' + fmtNum(c.low) + '</div></div>' +
+      '<span class="badge ' + st + '">' + st + '</span>' +
+      '<div class="actions"><button class="b" onclick="openEdit(\'' + c.id + '\')">Edit</button>' +
+      '<button class="b danger" onclick="openDelete(\'' + c.id + '\')">Delete</button></div></div>';
+  }).join('') : '<div class="empty">No chemicals found.</div>';
+  return h + '</div>';
+}
+
+function logHtml() {
+  if (!state.log.length) return '<div class="card"><div class="empty">No activity yet.</div></div>';
+  return '<div class="card"><h2>Recent activity (last 100)</h2><div style="overflow-x:auto"><table><tr><th>Time</th><th>Chemical</th><th>Action</th><th>Change</th><th>New stock</th><th>Note / User</th></tr>' +
+    state.log.map((l) => {
+      const ch = Number(l.change);
+      const cls = l.change === '' || isNaN(ch) ? '' : ch < 0 ? 'neg' : 'pos';
+      return '<tr><td>' + esc(l.time) + '</td><td>' + esc(l.chemical) + '</td><td>' + esc(l.action) + '</td>' +
+        '<td class="' + cls + '">' + (l.change === '' ? '' : (ch > 0 ? '+' : '') + fmtNum(ch)) + '</td><td>' + esc(l.newStock === '' ? '' : fmtNum(l.newStock)) + '</td><td>' + esc(l.note) + '</td></tr>';
+    }).join('') + '</table></div></div>';
+}
+
+/* ---------- modals ---------- */
+function openModal(html) {
+  $('#modalRoot').innerHTML = '<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="modal">' + html + '</div></div>';
+  const f = $('#modalRoot input'); if (f) f.focus();
+}
+function closeModal() { $('#modalRoot').innerHTML = ''; }
+const byId = (id) => state.chemicals.find((c) => c.id === id);
+
+function openAdjust(id, dir) {
+  const c = byId(id); if (!c) return;
+  const use = dir < 0;
+  openModal('<h3>' + (use ? 'Use' : 'Receive') + ' · ' + esc(c.name) + '</h3>' +
+    '<div class="sub">Current stock: <b>' + fmtNum(c.stock) + ' ' + esc(c.unit) + '</b></div>' +
+    '<label>Quantity ' + (use ? 'used' : 'received') + '</label><input id="aq" type="number" min="0" step="any" inputmode="decimal" oninput="adjPreview(\'' + id + '\',' + dir + ')">' +
+    '<label>Your name / note (optional)</label><input id="an" maxlength="100">' +
+    '<div id="prev" class="hint">Enter a quantity</div>' +
+    '<div class="foot"><button class="b" onclick="closeModal()">Cancel</button>' +
+    '<button class="b primary" onclick="submitAdjust(\'' + id + '\',' + dir + ')">Save</button></div>');
+}
+function adjPreview(id, dir) {
+  const c = byId(id), q = parseFloat($('#aq').value), p = $('#prev');
+  if (!(q > 0)) { p.className = 'hint'; p.textContent = 'Enter a quantity'; return; }
+  const next = Math.round((c.stock + dir * q) * 1e6) / 1e6;
+  if (next < 0) { p.className = 'hint LOW'; p.textContent = 'Not enough stock (only ' + fmtNum(c.stock) + ' left)'; return; }
+  const st = next < c.low ? 'LOW' : 'GOOD';
+  p.className = 'hint ' + st;
+  p.textContent = 'New stock: ' + fmtNum(next) + ' ' + c.unit + ' → ' + st;
+}
+async function submitAdjust(id, dir) {
+  const q = parseFloat($('#aq').value);
+  if (!(q > 0)) { $('#prev').className = 'hint LOW'; $('#prev').textContent = 'Enter a quantity greater than 0'; return; }
+  const note = $('#an').value;
+  closeModal();
+  await call('adjustStock', [id, dir * q, note], dir < 0 ? 'Stock deducted' : 'Stock added');
+}
+
+function openEdit(id) {
+  const c = id ? byId(id) : { name: '', unit: 'bottle', stock: 0, low: 5 };
+  openModal('<h3>' + (id ? 'Edit chemical' : 'Add chemical') + '</h3>' +
+    '<label>Name</label><input id="en" value="' + esc(c.name) + '" maxlength="80">' +
+    '<label>Unit (e.g. bottle, g, mL)</label><input id="eu" value="' + esc(c.unit) + '" maxlength="20">' +
+    '<label>' + (id ? 'Current stock' : 'Starting stock') + '</label><input id="es" type="number" min="0" step="any" value="' + c.stock + '">' +
+    '<label>Low stock level (red when stock is below this)</label><input id="el" type="number" min="0" step="any" value="' + c.low + '">' +
+    '<div class="foot"><button class="b" onclick="closeModal()">Cancel</button>' +
+    '<button class="b primary" onclick="submitEdit(' + (id ? "'" + id + "'" : 'null') + ')">Save</button></div>');
+}
+async function submitEdit(id) {
+  const p = { id: id, name: $('#en').value, unit: $('#eu').value, stock: $('#es').value, low: $('#el').value };
+  if (!p.name.trim()) { $('#en').style.borderColor = '#dc2626'; return; }
+  closeModal();
+  await call(id ? 'updateChemical' : 'addChemical', [p], 'Saved');
+}
+
+function openDelete(id) {
+  const c = byId(id); if (!c) return;
+  openModal('<h3>Delete chemical?</h3><p>Remove <b>' + esc(c.name) + '</b> from the inventory? Its history stays in the Log sheet.</p>' +
+    '<div class="foot"><button class="b" onclick="closeModal()">Cancel</button>' +
+    '<button class="b primary" style="background:#b91c1c;border-color:#b91c1c" onclick="confirmDelete(\'' + id + '\')">Delete</button></div>');
+}
+async function confirmDelete(id) { closeModal(); await call('deleteChemical', [id], 'Deleted'); }
+
+/* ---------- init ---------- */
+document.querySelectorAll('nav button').forEach((b) => b.addEventListener('click', () => { tab = b.dataset.tab; render(); }));
+call('getAppData', []);
+</script>
+</body>
+</html>
